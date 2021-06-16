@@ -4,64 +4,79 @@ import java.util.BitSet;
 
 //Implementation of Langston's Ant
 //http://mathworld.wolfram.com/LangtonsAnt.html
+boolean record = false;
+int states_w = 10;
+int states_h = 10;
+int zoom = 25;
+int ControlFrame_w = 640;
+int ControlFrame_h = 800;
+int GUILocationX = 0;
+int GUILocationY = 0;
 
-ArrayList<Ant> ants;
+int screen_x = ControlFrame_w;
+int screen_y = 0;
+int screen_width = states_w * zoom;
+int screen_height = states_h * zoom;
 
-int[] states;
-BitSet rules;
+//these are used by the GUI and associated objects
+int guiObjectSize = 40;
+int guiObjectWidth = 600;
+int guiBufferSize = 10;
+int gridSize = guiObjectSize + guiBufferSize;
+int gridOffset = guiBufferSize;
+
+color backgroundColor = color(15);
+color guiGroupBackground = color(30);
+color guiBackground = color(60);
+color guiForeground = color(120);
+color guiActive=color(150);
+
+
+int[][] states;
 ArrayList<Integer> mapping;
 color[] colors;
 
-int qtyAnts = 5;
+ArrayList<Colony> colonies;
 int ruleDepth = 4; // minimum rule set is 2
-int steps = 1000;
-
-PImage output;
+int steps = 1;
+int qty_ants=2;
+int qty_colonies = 2;
 
 //GUI
 //ControlFrame GUI;
 
 void setup() {
-  size(768, 1000);
+  size(1, 1, P3D);
+  surface.setSize(states_w*zoom, states_h*zoom);
+  colorMode(HSB, 1, 1, 1);
 
-  output = createImage(width, height, RGB);
+  colonies = new ArrayList<Colony>();
 
-  initAnts();
+  for (int i = 0; i < qty_colonies; i++) {
+    colonies.add(new Colony(qty_ants, ruleDepth));
+  }
 
+  initStates();
   initMapping();
-  
-  rules = new BitSet(ruleDepth);
-  randomizeRules();
-  
   colors = new color[ruleDepth];
   randomizeColors();
-
-  states = new int[width*height];
-  initStates();
 
   welcomeMessage();
 }
 
-void randomizeRules() {
-  for (int i = 0; i < ruleDepth; i++) {
-    if (random(0, 1) < 0.5) {
-      rules.set(i, false);
-    } else {
-      rules.set(i, true);
-    }
+void draw() {
+  for(int i = 0 ; i < steps; i++){
+  for (Colony c : colonies) {
+    c.update(states);
   }
-}
-
-void initAnts(){
-  ants = new ArrayList<Ant>();
-  for (int i = 0; i < qtyAnts; i++) {
-    ants.add(new Ant());
   }
+  image(renderStates(), 0, 0);
 }
 
 void initMapping() {
   mapping = new ArrayList<Integer>();
   for (int i = 0; i < ruleDepth; i++) {
+    println((i+1)%ruleDepth);
     mapping.add((i+1)%ruleDepth);
   }
 }
@@ -86,26 +101,26 @@ void reverseMapping() {
 
 void randomizeColors() {
   for (int i = 0; i < colors.length; i++) {
-    colors[i] = int(random(0xFFFFFF));
+    colors[i] = color(random(0, 1), random(.5, 1), random(.5, 1));
   }
 }
 
 void initStates() {
-  for (int i = 0; i < width*height; i++) {
-    states[i] = 0; //initialize states to all false
-  }
+  states = new int[states_w][states_h];
 }
 
 void keyPressed() {
   switch(key) {
   case 'r':
-    randomizeRules();
+    for (Colony c : colonies) {
+      c.randomizeRules();
+    }
     break;
   case 'm':
     randomizeMapping();
     break;
   case 's':
-    sortMapping();
+    shuffleMapping();
     break;
   case 'i':
     initMapping();
@@ -122,29 +137,31 @@ void keyPressed() {
   }
 }
 
-void draw() {
 
-  for (int i = 0; i < steps; i++) {
-    for (Ant a : ants) { 
-      states[a.getPosition()] = mapping.get(states[a.getPosition()]);
-      a.update(states, rules);
+
+PGraphics renderStates() {
+  PGraphics output = createGraphics(width, height);
+  PImage save = createImage(states_w, states_h, RGB);
+  output.beginDraw();
+  output.noStroke();
+  for (int y = 0; y < states_h; y++ ) {
+    for (int x =0; x < states_w; x++) {
+      output.fill(colors[states[x][y]]);
+      output.rect(x*zoom, y*zoom, zoom, zoom);
+      save.pixels[x+states_w*y] = colors[states[x][y]];
     }
   }
-
-  output=renderStates();
-
-  image(output, 0, 0);
-}
-
-PImage renderStates() {
-  PImage image = createImage(width, height, RGB);
-  image.loadPixels();
-  for (int i = 0; i < output.pixels.length; i++ ) {
-    image.pixels[i] = colors[states[i]];
+  if (record) {
+    if ( frameCount <= 1000) {
+      save.save("/Users/phillipstearns/Dropbox/Projects/NFTs/H=N/smol4/smolAnt_005/smolAnt_005"+nfs(frameCount, 4)+".png");
+    } else {
+      exit();
+    }
   }
-  image.updatePixels();
-  return image;
+  output.endDraw();
+  return output;
 }
+
 
 void welcomeMessage() {
   println("INSTRUNCTIONS:");
