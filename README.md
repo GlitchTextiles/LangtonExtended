@@ -1,6 +1,6 @@
-# LangstonExtended
+# LangtonExtended
 
-A generalized implementation of Langston's ant for creating 2D graphic designs.
+A generalized implementation of Langton's ant for creating 2D graphic designs.
 
 ## To Do:
 
