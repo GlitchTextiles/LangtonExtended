@@ -2,7 +2,7 @@ import controlP5.*;
 import java.util.Collections;
 import java.util.BitSet;
 
-//Implementation of Langston's Ant
+//Implementation of Langton's Ant
 //http://mathworld.wolfram.com/LangtonsAnt.html
 boolean record = false;
 int states_w = 10;
